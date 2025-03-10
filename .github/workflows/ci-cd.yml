@@ -1,0 +1,46 @@
+name: CI/CD Pipeline with Nexus
+
+on:
+  push:
+    branches:
+      - main  # Exécute le pipeline uniquement sur la branche main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+#Checkout du code
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+#Installer JDK et Maven        
+      - name: Installer JDK et Maven
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+
+#Configurer Maven pour Nexus
+      - name: Configurer Maven pour Nexus
+        run: |
+          mkdir -p ~/.m2
+          echo "<settings>
+            <servers>
+              <server>
+                <id>nexus</id>
+                <username>${admin}</username>
+                <password>${master-nexus}</password>
+              </server>
+            </servers>
+          </settings>" > ~/.m2/settings.xml
+
+      - name: Construire et tester le projet
+        run: mvn clean package
+
+#Déployer l’artefact sur Nexus
+      - name: Déployer l’artefact sur Nexus
+        run: mvn deploy
